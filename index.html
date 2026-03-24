@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turns Enterprise - Lead Pipeline Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #0F1419;
+            color: #FFFFFF;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            gap: 2rem;
+        }
+
+        .header-left h1 {
+            font-size: 2.5rem;
+            color: #2DD4BF;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header-left p {
+            color: #94A3B8;
+            font-size: 1.1rem;
+        }
+
+        .header-right {
+            text-align: right;
+            padding-top: 0.5rem;
+        }
+
+        .current-date {
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        /* Filters */
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            color: #94A3B8;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            padding: 0.75rem 1rem;
+            background-color: #1A2332;
+            color: #FFFFFF;
+            border: 1px solid #2A3A4E;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 180px;
+        }
+
+        .filter-group select:hover {
+            border-color: #2DD4BF;
+            background-color: #212B3A;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #2DD4BF;
+            box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+        }
+
+        .filter-group select option {
+            background-color: #1A2332;
+            color: #FFFFFF;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: #1A2332;
+            border: 1px solid #2A3A4E;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid #2DD4BF;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            border-color: #2DD4BF;
+            box-shadow: 0 8px 24px rgba(45, 212, 191, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .kpi-card.secondary {
+            border-left-color: #3B82F6;
+        }
+
+        .kpi-card.success {
+            border-left-color: #22C55E;
+        }
+
+        .kpi-card.warning {
+            border-left-color: #F59E0B;
+        }
+
+        .kpi-card.danger {
+            border-left-color: #EF4444;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2DD4BF;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-card.secondary .kpi-value {
+            color: #3B82F6;
+        }
+
+        .kpi-card.success .kpi-value {
+            color: #22C55E;
+        }
+
+        .kpi-card.warning .kpi-value {
+            color: #F59E0B;
+        }
+
+        .kpi-card.danger .kpi-value {
+            color: #EF4444;
+        }
+
+        .kpi-label {
+            color: #94A3B8;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background-color: #1A2332;
+            border: 1px solid #2A3A4E;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2DD4BF;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Metrics Row */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metrics-card {
+            background-color: #1A2332;
+            border: 1px solid #2A3A4E;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .metrics-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2DD4BF;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Channel Metrics */
+        .channel-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .channel-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .channel-stat-label {
+            color: #94A3B8;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .channel-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2DD4BF;
+        }
+
+        .channel-stat-secondary {
+            color: #3B82F6;
+        }
+
+        .channel-stat-success {
+            color: #22C55E;
+        }
+
+        /* Temperature Breakdown */
+        .temp-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .temp-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .temp-label {
+            color: #FFFFFF;
+            font-weight: 500;
+        }
+
+        .temp-stats {
+            color: #94A3B8;
+            font-size: 0.85rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background-color: #0F1419;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #2A3A4E;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .progress-fill.hot {
+            background: linear-gradient(90deg, #22C55E, #16A34A);
+        }
+
+        .progress-fill.warm {
+            background: linear-gradient(90deg, #F59E0B, #D97706);
+        }
+
+        .progress-fill.cold {
+            background: linear-gradient(90deg, #3B82F6, #2563EB);
+        }
+
+        /* Table */
+        .table-section {
+            background-color: #1A2332;
+            border: 1px solid #2A3A4E;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .table-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2DD4BF;
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background-color: #0F1419;
+        }
+
+        th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            color: #2DD4BF;
+            font-weight: 600;
+            border-bottom: 2px solid #2A3A4E;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+
+        th:hover {
+            color: #22C55E;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #2A3A4E;
+            color: #FFFFFF;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #111820;
+        }
+
+        tbody tr:hover {
+            background-color: #212B3A;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .badge-hot {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-warm {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-cold {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-new {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-contacted {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-qualified {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-proposal {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-negotiation {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-won {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22C55E;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-lost {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+            }
+
+            .header-left h1 {
+                font-size: 2rem;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-group select {
+                min-width: 100%;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .channel-stats {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            td, th {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Turns Enterprise</h1>
+                <p>Lead Pipeline Dashboard</p>
+            </div>
+            <div class="header-right">
+                <div class="current-date" id="currentDate"></div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="serviceFilter">Service</label>
+                <select id="serviceFilter">
+                    <option value="">All Services</option>
+                    <option value="Amazon PPC">Amazon PPC</option>
+                    <option value="Amazon Full Account">Amazon Full Account</option>
+                    <option value="Meta Advertising">Meta Advertising</option>
+                    <option value="TikTok Shop Launch">TikTok Shop Launch</option>
+                    <option value="Strategic Growth">Strategic Growth</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="temperatureFilter">Temperature</label>
+                <select id="temperatureFilter">
+                    <option value="">All Temperatures</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Cold">Cold</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sourceFilter">Source</label>
+                <select id="sourceFilter">
+                    <option value="">All Sources</option>
+                    <option value="Helium 10">Helium 10</option>
+                    <option value="LinkedIn Sales Navigator">LinkedIn Sales Navigator</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Facebook Group">Facebook Group</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="Google Search">Google Search</option>
+                    <option value="Referral">Referral</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-value" id="kpiTotalLeads">28</div>
+                <div class="kpi-label">Total Leads</div>
+            </div>
+            <div class="kpi-card secondary">
+                <div class="kpi-value" id="kpiResponseRate">68%</div>
+                <div class="kpi-label">Response Rate</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-value" id="kpiCallsBooked">12</div>
+                <div class="kpi-label">Calls Booked</div>
+            </div>
+            <div class="kpi-card secondary">
+                <div class="kpi-value" id="kpiProposalsSent">8</div>
+                <div class="kpi-label">Proposals Sent</div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-value" id="kpiDealsWon">£52,000</div>
+                <div class="kpi-label">Deals Won (Monthly)</div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-title">Pipeline Funnel</div>
+                <div class="chart-container">
+                    <canvas id="funnelChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Service Breakdown</div>
+                <div class="chart-container">
+                    <canvas id="serviceChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Source Performance</div>
+                <div class="chart-container">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Weekly Activity (8 Weeks)</div>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="metrics-grid">
+            <div class="metrics-card">
+                <div class="metrics-title">Outreach by Channel</div>
+                <div class="channel-stats">
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">Gmail Contacts</span>
+                        <span class="channel-stat-value" id="gmailContacts">14</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">Gmail Responses</span>
+                        <span class="channel-stat-value channel-stat-success" id="gmailResponses">10</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">Gmail Response Rate</span>
+                        <span class="channel-stat-value channel-stat-secondary" id="gmailRate">71%</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">Gmail Calls</span>
+                        <span class="channel-stat-value channel-stat-success" id="gmailCalls">6</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">LinkedIn Contacts</span>
+                        <span class="channel-stat-value" id="linkedinContacts">14</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">LinkedIn Responses</span>
+                        <span class="channel-stat-value channel-stat-success" id="linkedinResponses">9</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">LinkedIn Response Rate</span>
+                        <span class="channel-stat-value channel-stat-secondary" id="linkedinRate">64%</span>
+                    </div>
+                    <div class="channel-stat-item">
+                        <span class="channel-stat-label">LinkedIn Calls</span>
+                        <span class="channel-stat-value channel-stat-success" id="linkedinCalls">6</span>
+                    </div>
+                </div>
+            </div>
+            <div class="metrics-card">
+                <div class="metrics-title">Temperature Breakdown</div>
+                <div class="temp-item">
+                    <div class="temp-header">
+                        <span class="temp-label">Hot</span>
+                        <span class="temp-stats" id="hotStats">9 leads (32%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill hot" id="hotBar" style="width: 32%">32%</div>
+                    </div>
+                </div>
+                <div class="temp-item">
+                    <div class="temp-header">
+                        <span class="temp-label">Warm</span>
+                        <span class="temp-stats" id="warmStats">11 leads (39%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill warm" id="warmBar" style="width: 39%">39%</div>
+                    </div>
+                </div>
+                <div class="temp-item">
+                    <div class="temp-header">
+                        <span class="temp-label">Cold</span>
+                        <span class="temp-stats" id="coldStats">8 leads (29%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill cold" id="coldBar" style="width: 29%">29%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lead Table -->
+        <div class="table-section">
+            <div class="table-title">Leads Pipeline</div>
+            <table id="leadsTable">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Contact</th>
+                        <th>Service</th>
+                        <th>Temperature</th>
+                        <th>Stage</th>
+                        <th>Source</th>
+                        <th>Channel</th>
+                        <th>Last Contact</th>
+                        <th>Next Action</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Set Chart.js defaults for dark theme
+        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.borderColor = '#2A3A4E';
+
+        // Sample data - 28 leads
+        const leads = [
+            { company: 'EcoGear Solutions', contact: 'Sarah Mitchell', service: 'Amazon PPC', temperature: 'Hot', stage: 'Proposal', source: 'LinkedIn Sales Navigator', channel: 'LinkedIn', lastContact: '2026-03-18', nextAction: 'Review proposal' },
+            { company: 'BlueSky Hydration', contact: 'James Chen', service: 'Amazon Full Account', temperature: 'Hot', stage: 'Negotiation', source: 'Helium 10', channel: 'Gmail', lastContact: '2026-03-17', nextAction: 'Contract review' },
+            { company: 'FitLife Nutrition', contact: 'Emma Rodriguez', service: 'Meta Advertising', temperature: 'Warm', stage: 'Qualified', source: 'Facebook Group', channel: 'Gmail', lastContact: '2026-03-16', nextAction: 'Discovery call' },
+            { company: 'VisionLab Tech', contact: 'Alex Kumar', service: 'Strategic Growth', temperature: 'Hot', stage: 'Proposal', source: 'Referral', channel: 'LinkedIn', lastContact: '2026-03-15', nextAction: 'Send proposal' },
+            { company: 'PureWater Brands', contact: 'Lisa Thompson', service: 'Amazon PPC', temperature: 'Warm', stage: 'Contacted', source: 'Google Search', channel: 'Gmail', lastContact: '2026-03-14', nextAction: 'Schedule call' },
+            { company: 'GreenLeaf Coffee', contact: 'Marcus Jackson', service: 'TikTok Shop Launch', temperature: 'Cold', stage: 'New', source: 'Instagram', channel: 'LinkedIn', lastContact: '2026-03-13', nextAction: 'First outreach' },
+            { company: 'LuxeBeauty Co', contact: 'Sophie Leclerc', service: 'Meta Advertising', temperature: 'Hot', stage: 'Won', source: 'LinkedIn Sales Navigator', channel: 'LinkedIn', lastContact: '2026-03-12', nextAction: 'Onboarding', dealValue: 4500 },
+            { company: 'SmartHome Hub', contact: 'David Lee', service: 'Amazon Full Account', temperature: 'Warm', stage: 'Qualified', source: 'Referral', channel: 'Gmail', lastContact: '2026-03-11', nextAction: 'Demo call' },
+            { company: 'ActiveFit Gear', contact: 'Jessica Wang', service: 'Strategic Growth', temperature: 'Warm', stage: 'Contacted', source: 'Helium 10', channel: 'LinkedIn', lastContact: '2026-03-10', nextAction: 'Follow up call' },
+            { company: 'NaturalGlow Skincare', contact: 'Olivia Brown', service: 'Meta Advertising', temperature: 'Warm', stage: 'Proposal', source: 'Facebook Group', channel: 'Gmail', lastContact: '2026-03-09', nextAction: 'Negotiate terms' },
+            { company: 'TechVision Labs', contact: 'Ryan Matthews', service: 'Amazon PPC', temperature: 'Hot', stage: 'Won', source: 'Google Search', channel: 'Gmail', lastContact: '2026-03-08', nextAction: 'Onboarding', dealValue: 3800 },
+            { company: 'UrbanStyle Fashion', contact: 'Natasha Patel', service: 'TikTok Shop Launch', temperature: 'Warm', stage: 'Qualified', source: 'TikTok', channel: 'LinkedIn', lastContact: '2026-03-07', nextAction: 'Prepare demo' },
+            { company: 'VitaminPlus Health', contact: 'Thomas Anderson', service: 'Amazon Full Account', temperature: 'Cold', stage: 'New', source: 'Referral', channel: 'Gmail', lastContact: '2026-03-06', nextAction: 'Initial email' },
+            { company: 'CostalVibes Jewelry', contact: 'Isabella Martinez', service: 'Meta Advertising', temperature: 'Hot', stage: 'Won', source: 'Instagram', channel: 'LinkedIn', lastContact: '2026-03-05', nextAction: 'Ongoing support', dealValue: 5200 },
+            { company: 'EcoSmartHome', contact: 'Noah Campbell', service: 'Strategic Growth', temperature: 'Cold', stage: 'Contacted', source: 'LinkedIn Sales Navigator', channel: 'Gmail', lastContact: '2026-03-04', nextAction: 'Send materials' },
+            { company: 'SnapFit Apparel', contact: 'Maya Desai', service: 'Amazon PPC', temperature: 'Warm', stage: 'Proposal', source: 'Facebook Group', channel: 'LinkedIn', lastContact: '2026-03-03', nextAction: 'Finalize proposal' },
+            { company: 'OrganicWave Beverages', contact: 'Lucas Foster', service: 'Amazon Full Account', temperature: 'Warm', stage: 'Qualified', source: 'Helium 10', channel: 'Gmail', lastContact: '2026-03-02', nextAction: 'Schedule demo' },
+            { company: 'MinimalHome Decor', contact: 'Zara Khan', service: 'TikTok Shop Launch', temperature: 'Hot', stage: 'Negotiation', source: 'TikTok', channel: 'LinkedIn', lastContact: '2026-03-01', nextAction: 'Final negotiation' },
+            { company: 'PowerBoost Fitness', contact: 'Chris Roberts', service: 'Meta Advertising', temperature: 'Cold', stage: 'New', source: 'Google Search', channel: 'Gmail', lastContact: '2026-02-28', nextAction: 'Outreach email' },
+            { company: 'LuminaBeauty Studio', contact: 'Amanda White', service: 'Strategic Growth', temperature: 'Warm', stage: 'Contacted', source: 'Instagram', channel: 'LinkedIn', lastContact: '2026-02-27', nextAction: 'Follow-up call' },
+            { company: 'SmoothFlow Beverages', contact: 'Michael Zhang', service: 'Amazon PPC', temperature: 'Warm', stage: 'Proposal', source: 'Referral', channel: 'Gmail', lastContact: '2026-02-26', nextAction: 'Await feedback' },
+            { company: 'TrendyTech Gadgets', contact: 'Sofia Alvarez', service: 'Amazon Full Account', temperature: 'Hot', stage: 'Won', source: 'LinkedIn Sales Navigator', channel: 'LinkedIn', lastContact: '2026-02-25', nextAction: 'Campaign setup', dealValue: 4200 },
+            { company: 'VitalFlow Water', contact: 'Benjamin Price', service: 'Meta Advertising', temperature: 'Cold', stage: 'Contacted', source: 'Facebook Group', channel: 'Gmail', lastContact: '2026-02-24', nextAction: 'Send case studies' },
+            { company: 'ElitePerformance Gear', contact: 'Stephanie Green', service: 'TikTok Shop Launch', temperature: 'Warm', stage: 'Qualified', source: 'Helium 10', channel: 'LinkedIn', lastContact: '2026-02-23', nextAction: 'Product demo' },
+            { company: 'UrbanBliss Coffee', contact: 'Kevin O\'Brien', service: 'Strategic Growth', temperature: 'Cold', stage: 'New', source: 'TikTok', channel: 'Gmail', lastContact: '2026-02-22', nextAction: 'Intro email' },
+            { company: 'RadiantSkin Labs', contact: 'Rachel Diamond', service: 'Amazon PPC', temperature: 'Hot', stage: 'Proposal', source: 'Instagram', channel: 'LinkedIn', lastContact: '2026-02-21', nextAction: 'Review pricing' },
+            { company: 'SwiftLogistics Hub', contact: 'Edward Davis', service: 'Amazon Full Account', temperature: 'Warm', stage: 'Contacted', source: 'Google Search', channel: 'Gmail', lastContact: '2026-02-20', nextAction: 'Schedule call' },
+            { company: 'ProVitality Supplements', contact: 'Rebecca Holmes', service: 'Meta Advertising', temperature: 'Warm', stage: 'Qualified', source: 'Referral', channel: 'LinkedIn', lastContact: '2026-02-19', nextAction: 'Present roadmap' }
+        ];
+
+        // Weekly activity data (8 weeks)
+        const weeklyData = [12, 15, 10, 18, 14, 16, 13, 11];
+
+        // DOM Elements
+        const serviceFilter = document.getElementById('serviceFilter');
+        const temperatureFilter = document.getElementById('temperatureFilter');
+        const sourceFilter = document.getElementById('sourceFilter');
+        const leadsTable = document.getElementById('leadsTable');
+        const leadsBody = document.getElementById('leadsBody');
+
+        // Chart instances
+        let funnelChart, serviceChart, sourceChart, activityChart;
+
+        // Initialize
+        function init() {
+            updateDate();
+            renderTable();
+            updateKPIs();
+            renderCharts();
+
+            // Event listeners
+            serviceFilter.addEventListener('change', handleFilterChange);
+            temperatureFilter.addEventListener('change', handleFilterChange);
+            sourceFilter.addEventListener('change', handleFilterChange);
+
+            // Table sorting
+            document.querySelectorAll('th').forEach((th, index) => {
+                if (index === 0 || index === 7) { // Company and Last Contact
+                    th.addEventListener('click', () => sortTable(index));
+                }
+            });
+        }
+
+        function updateDate() {
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', options);
+        }
+
+        function getFilteredLeads() {
+            const serviceVal = serviceFilter.value;
+            const temperatureVal = temperatureFilter.value;
+            const sourceVal = sourceFilter.value;
+
+            return leads.filter(lead => {
+                const serviceMatch = !serviceVal || lead.service === serviceVal;
+                const tempMatch = !temperatureVal || lead.temperature === temperatureVal;
+                const sourceMatch = !sourceVal || lead.source === sourceVal;
+                return serviceMatch && tempMatch && sourceMatch;
+            });
+        }
+
+        function handleFilterChange() {
+            updateKPIs();
+            renderTable();
+            renderCharts();
+        }
+
+        function updateKPIs() {
+            const filtered = getFilteredLeads();
+
+            // Total Leads
+            document.getElementById('kpiTotalLeads').textContent = filtered.length;
+
+            // Response Rate (Warm + Hot / Total * 100)
+            const responded = filtered.filter(l => l.stage !== 'New').length;
+            const responseRate = filtered.length > 0 ? Math.round((responded / filtered.length) * 100) : 0;
+            document.getElementById('kpiResponseRate').textContent = responseRate + '%';
+
+            // Calls Booked (Qualified + Proposal + Negotiation)
+            const callsBooked = filtered.filter(l => ['Qualified', 'Proposal', 'Negotiation'].includes(l.stage)).length;
+            document.getElementById('kpiCallsBooked').textContent = callsBooked;
+
+            // Proposals Sent (Proposal + Negotiation + Won)
+            const proposalsSent = filtered.filter(l => ['Proposal', 'Negotiation', 'Won'].includes(l.stage)).length;
+            document.getElementById('kpiProposalsSent').textContent = proposalsSent;
+
+            // Deals Won
+            const won = filtered.filter(l => l.stage === 'Won');
+            const totalDealValue = won.reduce((sum, lead) => sum + (lead.dealValue || 0), 0);
+            document.getElementById('kpiDealsWon').textContent = '£' + totalDealValue.toLocaleString();
+
+            // Channel metrics
+            const gmailLeads = filtered.filter(l => l.channel === 'Gmail');
+            const linkedinLeads = filtered.filter(l => l.channel === 'LinkedIn');
+
+            document.getElementById('gmailContacts').textContent = gmailLeads.length;
+            const gmailResponded = gmailLeads.filter(l => l.stage !== 'New').length;
+            document.getElementById('gmailResponses').textContent = gmailResponded;
+            document.getElementById('gmailRate').textContent = gmailLeads.length > 0 ? Math.round((gmailResponded / gmailLeads.length) * 100) + '%' : '0%';
+            document.getElementById('gmailCalls').textContent = gmailLeads.filter(l => ['Qualified', 'Proposal', 'Negotiation', 'Won'].includes(l.stage)).length;
+
+            document.getElementById('linkedinContacts').textContent = linkedinLeads.length;
+            const linkedinResponded = linkedinLeads.filter(l => l.stage !== 'New').length;
+            document.getElementById('linkedinResponses').textContent = linkedinResponded;
+            document.getElementById('linkedinRate').textContent = linkedinLeads.length > 0 ? Math.round((linkedinResponded / linkedinLeads.length) * 100) + '%' : '0%';
+            document.getElementById('linkedinCalls').textContent = linkedinLeads.filter(l => ['Qualified', 'Proposal', 'Negotiation', 'Won'].includes(l.stage)).length;
+
+            // Temperature breakdown
+            const hotLeads = filtered.filter(l => l.temperature === 'Hot');
+            const warmLeads = filtered.filter(l => l.temperature === 'Warm');
+            const coldLeads = filtered.filter(l => l.temperature === 'Cold');
+            const total = filtered.length;
+
+            const hotPct = total > 0 ? Math.round((hotLeads.length / total) * 100) : 0;
+            const warmPct = total > 0 ? Math.round((warmLeads.length / total) * 100) : 0;
+            const coldPct = total > 0 ? Math.round((coldLeads.length / total) * 100) : 0;
+
+            document.getElementById('hotStats').textContent = hotLeads.length + ' leads (' + hotPct + '%)';
+            document.getElementById('warmStats').textContent = warmLeads.length + ' leads (' + warmPct + '%)';
+            document.getElementById('coldStats').textContent = coldLeads.length + ' leads (' + coldPct + '%)';
+
+            document.getElementById('hotBar').style.width = hotPct + '%';
+            document.getElementById('hotBar').textContent = hotPct > 15 ? hotPct + '%' : '';
+            document.getElementById('warmBar').style.width = warmPct + '%';
+            document.getElementById('warmBar').textContent = warmPct > 15 ? warmPct + '%' : '';
+            document.getElementById('coldBar').style.width = coldPct + '%';
+            document.getElementById('coldBar').textContent = coldPct > 15 ? coldPct + '%' : '';
+        }
+
+        function renderTable() {
+            const filtered = getFilteredLeads();
+            leadsBody.innerHTML = '';
+
+            filtered.forEach(lead => {
+                const row = document.createElement('tr');
+                const tempBadgeClass = 'badge-' + lead.temperature.toLowerCase();
+                const stageBadgeClass = 'badge-' + lead.stage.toLowerCase().replace(/\s+/g, '');
+
+                row.innerHTML = `
+                    <td>${lead.company}</td>
+                    <td>${lead.contact}</td>
+                    <td>${lead.service}</td>
+                    <td><span class="badge ${tempBadgeClass}">${lead.temperature}</span></td>
+                    <td><span class="badge ${stageBadgeClass}">${lead.stage}</span></td>
+                    <td>${lead.source}</td>
+                    <td>${lead.channel}</td>
+                    <td>${lead.lastContact}</td>
+                    <td>${lead.nextAction}</td>
+                `;
+                leadsBody.appendChild(row);
+            });
+        }
+
+        function sortTable(columnIndex) {
+            const rows = Array.from(leadsBody.querySelectorAll('tr'));
+            const filtered = getFilteredLeads();
+
+            rows.sort((a, b) => {
+                const aVal = a.cells[columnIndex].textContent;
+                const bVal = b.cells[columnIndex].textContent;
+
+                if (columnIndex === 0) { // Company name
+                    return aVal.localeCompare(bVal);
+                } else if (columnIndex === 7) { // Last Contact date
+                    return new Date(bVal) - new Date(aVal);
+                }
+                return 0;
+            });
+
+            rows.forEach(row => leadsBody.appendChild(row));
+        }
+
+        function renderCharts() {
+            const filtered = getFilteredLeads();
+
+            // Pipeline Funnel
+            const stages = ['New', 'Contacted', 'Qualified', 'Proposal', 'Negotiation', 'Won'];
+            const stageCounts = stages.map(stage => filtered.filter(l => l.stage === stage).length);
+
+            if (funnelChart) funnelChart.destroy();
+            const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+            funnelChart = new Chart(funnelCtx, {
+                type: 'bar',
+                data: {
+                    labels: stages,
+                    datasets: [{
+                        label: 'Leads',
+                        data: stageCounts,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(45, 212, 191, 0.8)',
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(34, 197, 94, 0.9)'
+                        ],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#2A3A4E' }
+                        },
+                        y: {
+                            ticks: { color: '#94A3B8' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Service Breakdown
+            const services = ['Amazon PPC', 'Amazon Full Account', 'Meta Advertising', 'TikTok Shop Launch', 'Strategic Growth'];
+            const serviceCounts = services.map(service => filtered.filter(l => l.service === service).length);
+
+            if (serviceChart) serviceChart.destroy();
+            const serviceCtx = document.getElementById('serviceChart').getContext('2d');
+            serviceChart = new Chart(serviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: services,
+                    datasets: [{
+                        data: serviceCounts,
+                        backgroundColor: [
+                            '#2DD4BF',
+                            '#3B82F6',
+                            '#EC4899',
+                            '#F59E0B',
+                            '#8B5CF6'
+                        ],
+                        borderColor: '#1A2332',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94A3B8',
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Source Performance
+            const sources = ['Helium 10', 'LinkedIn Sales Navigator', 'Instagram', 'Facebook Group', 'TikTok', 'Google Search', 'Referral'];
+            const sourceCounts = sources.map(source => filtered.filter(l => l.source === source).length);
+
+            if (sourceChart) sourceChart.destroy();
+            const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+            sourceChart = new Chart(sourceCtx, {
+                type: 'bar',
+                data: {
+                    labels: sources,
+                    datasets: [{
+                        label: 'Leads',
+                        data: sourceCounts,
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#2A3A4E' }
+                        },
+                        x: {
+                            ticks: { color: '#94A3B8' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Weekly Activity
+            const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'];
+
+            if (activityChart) activityChart.destroy();
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [{
+                        label: 'Leads Contacted',
+                        data: weeklyData,
+                        borderColor: '#2DD4BF',
+                        backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#2DD4BF',
+                        pointBorderColor: '#1A2332',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94A3B8',
+                                font: { size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#2A3A4E' }
+                        },
+                        x: {
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#2A3A4E' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
